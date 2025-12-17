@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mobile Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    #reader {
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    #result {
+      font-size: 16px;
+      color: #155724;
+      background: #d4edda;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 400px;
+      word-wrap: break-word;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    button {
+      margin: 5px;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button#start {
+      background-color: #007bff;
+      color: white;
+    }
+
+    button#start:hover {
+      background-color: #0056b3;
+    }
+
+    button#stop {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    button#stop:hover {
+      background-color: #a71d2a;
+    }
+
+    #history {
+      margin-top: 20px;
+      width: 90%;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #history h3 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    #history ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    #history li {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📷 Mobile QR/Barcode Scanner</h2>
+
+  <div id="reader"></div>
+
+  <p id="result">No scan yet</p>
+
+  <div>
+    <button id="start" onclick="startScan()">Start Scan</button>
+    <button id="stop" onclick="stopScan()">Stop</button>
+  </div>
+
+  <div id="history">
+    <h3>Scan History</h3>
+    <ul id="historyList"></ul>
+  </div>
+
+  <script>
+    const result = document.getElementById("result");
+    const historyList = document.getElementById("historyList");
+    const html5QrCode = new Html5Qrcode("reader");
+
+    // Load history from local storage
+    let scanHistory = JSON.parse(localStorage.getItem("scanHistory")) || [];
+    updateHistoryUI();
+
+    function startScan() {
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        decodedText => {
+          result.innerText = "Scanned: " + decodedText;
+          saveToHistory(decodedText);
+          html5QrCode.stop();
+        },
+        error => {
+          // Ignore scan errors
+        }
+      ).catch(err => console.error("Scan start failed:", err));
+    }
+
+    function stopScan() {
+      html5QrCode.stop().catch(err => console.error("Stop failed:", err));
+    }
+
+    function saveToHistory(text) {
+      if (!scanHistory.includes(text)) {
+        scanHistory.unshift(text); // newest first
+        if (scanHistory.length > 10) scanHistory.pop(); // keep last 10
+        localStorage.setItem("scanHistory", JSON.stringify(scanHistory));
+        updateHistoryUI();
+      }
+    }
+
+    function updateHistoryUI() {
+      historyList.innerHTML = "";
+      scanHistory.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        historyList.appendChild(li);
+      });
+    }
+  </script>
+
+</body>
+</html>
